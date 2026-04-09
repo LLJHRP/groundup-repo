@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cap Table — Groundup.ai</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --surface2: #f0efe9;
+  --border: #e2e0d8;
+  --border2: #ccc9be;
+  --text: #1a1916;
+  --text2: #6b6860;
+  --text3: #9c9a94;
+  --blue: #2563eb;
+  --blue-light: #dbeafe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+.mono { font-family: 'DM Mono', monospace; }
+.app { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; }
+header { margin-bottom: 2rem; }
+header h1 { font-size: 26px; font-weight: 500; letter-spacing: -0.5px; }
+header p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+.tab { padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--text); }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.metric-label { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; }
+.btn:hover { background: var(--surface2); }
+.btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+.btn-primary:hover { opacity: 0.85; }
+.btn-danger { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.round-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.rf { padding: 4px 12px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; color: var(--text2); }
+.rf:hover { background: var(--surface2); }
+.rf.active { background: var(--text); color: #fff; border-color: var(--text); }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--surface2); font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+td { padding: 11px 14px; vertical-align: middle; }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.pill-Ordinary { background: var(--blue-light); color: #1e40af; }
+.pill-RCPS { background: var(--purple-light); color: #5b21b6; }
+.pill-ESOP { background: var(--green-light); color: #15803d; }
+.pill-CN { background: var(--amber-light); color: #92400e; }
+.pill-PreA { background: #fce7f3; color: #9d174d; }
+.action-cell { display: flex; gap: 4px; }
+.icon-btn { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; font-size: 13px; color: var(--text3); transition: all 0.1s; }
+.icon-btn:hover { background: var(--surface2); color: var(--text); }
+.icon-btn.del:hover { background: var(--red-light); color: var(--red); }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.modal { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.75rem; width: min(520px, 94vw); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+.modal h2 { font-size: 17px; font-weight: 500; margin-bottom: 1.25rem; }
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+.field input, .field select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
+.field input:focus, .field select:focus { border-color: var(--text); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+
+/* Returns Simulator layout */
+.returns-top { display: grid; grid-template-columns: 360px 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+@media(max-width:960px){ .returns-top { grid-template-columns: 1fr; } }
+
+.sim-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.sim-card:last-child { margin-bottom: 0; }
+.sim-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; color: var(--text2); }
+.sim-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+.sim-row label { font-size: 13px; color: var(--text2); white-space: nowrap; }
+
+/* input styling */
+.sim-input { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:13px; background:var(--surface); color:var(--text); outline:none; width:155px; }
+.sim-input:focus { border-color: var(--text); }
+.scenario-input-bare { width:100%; background:none; border:none; font-family:'DM Mono',monospace; font-size:15px; font-weight:500; color:var(--text); outline:none; }
+
+.new-investor-list { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.ni-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ni-item:last-child { border-bottom: none; }
+.ni-name { flex: 1; font-weight: 500; }
+.ni-shares { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); }
+.ni-pct { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--blue); min-width: 50px; text-align: right; }
+.ni-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 2px 5px; border-radius: 4px; }
+.ni-del:hover { background: var(--red-light); color: var(--red); }
+
+.dilution-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dilution-table th { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.dilution-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.dilution-table tr:last-child td { border-bottom: none; }
+
+.roi-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.roi-table th { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.roi-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.roi-table tr:last-child td { border-bottom: none; }
+.roi-table tr:hover td { background: var(--surface2); }
+
+.multiple-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; }
+.multiple-high { background: var(--green-light); color: var(--green); }
+.multiple-mid { background: var(--amber-light); color: var(--amber); }
+.multiple-low { background: var(--red-light); color: var(--red); }
+.multiple-inf { background: var(--purple-light); color: var(--purple); }
+
+/* Exit waterfall (below) */
+.exit-section { margin-top: 0; }
+.exit-section-header { font-size: 15px; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+.exit-section-header span { font-size: 12px; font-weight: 400; color: var(--text3); }
+.exit-two-col { display: grid; grid-template-columns: 400px 1fr; gap: 1.5rem; }
+@media(max-width:960px){ .exit-two-col { grid-template-columns: 1fr; } }
+
+.liq-tier { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; }
+.liq-tier-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.liq-tier-name { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.liq-tier-amount { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; text-align: right; }
+.liq-tier-amount-sub { font-size: 11px; color: var(--text3); margin-top: 2px; text-align: right; }
+.liq-tier-sub { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.priority-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+.priority-1 { background: #fce7f3; color: #9d174d; }
+.priority-2 { background: var(--purple-light); color: #5b21b6; }
+.priority-3 { background: var(--blue-light); color: #1e40af; }
+.decision-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+.decision-convert { background: var(--green-light); color: var(--green); }
+.decision-prefer { background: var(--amber-light); color: var(--amber); }
+
+/* Stacked breakdown bar */
+.breakdown-bar-track { display: flex; height: 28px; border-radius: 6px; overflow: hidden; width: 100%; background: var(--surface2); margin-top: 10px; }
+.breakdown-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; transition: width 0.35s ease; min-width: 0; padding: 0 4px; }
+.breakdown-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.breakdown-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+.breakdown-legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+.breakeven-banner { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.7; }
+.breakeven-banner strong { color: var(--text); }
+.remainder-none { background: var(--red-light); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--red); font-weight: 500; text-align: center; margin-top: 8px; }
+.remainder-positive { background: var(--green-light); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--green); font-weight: 500; text-align: center; margin-top: 8px; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.75rem 0; }
+
+/* Charts */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media(max-width:750px){.charts-grid{grid-template-columns:1fr;}}
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+.chart-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; color: var(--text2); }
+.chart-card-wide { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; grid-column: 1 / -1; }
+.chart-card-wide h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; color: var(--text2); }
+.chart-wrap { position: relative; height: 260px; }
+.chart-wrap-tall { position: relative; height: 340px; }
+
+/* ESOP / badges */
+.badge-converted { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#dcfce7;color:#15803d;letter-spacing:0.03em; }
+.badge-pending { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fef3c7;color:#92400e;letter-spacing:0.03em; }
+.badge-converted::before { content:'●';font-size:7px; }
+.badge-pending::before { content:'○';font-size:7px; }
+.cn-row-converted { background: #f0fdf4 !important; }
+.cn-row-pending { background: #fffbeb !important; }
+.empty { padding: 3rem 1rem; text-align: center; color: var(--text3); font-size: 13px; }
+.page { display: none; }
+.page.active { display: block; }
+@media(max-width:600px){.field-row{grid-template-columns:1fr;}header h1{font-size:20px;}.metrics{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Groundup.ai — Cap Table</h1>
+    <p>Equity tracker · Returns simulator · Exit waterfall · Dilution modeller</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('captable',event)">Cap Table</button>
+    <button class="tab" onclick="showTab('returns',event)">Returns Simulator</button>
+    <button class="tab" onclick="showTab('charts',event)">Charts</button>
+    <button class="tab" onclick="showTab('esop',event)">ESOP</button>
+  </div>
+
+  <!-- CAP TABLE -->
+  <div id="tab-captable" class="page active">
+    <div class="metrics" id="ct-metrics"></div>
+    <div class="section-header">
+      <div class="round-filters" id="round-filters"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Add shareholder</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortTable('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name"></span></th>
+          <th>Round</th><th>Date</th><th>Class / Status</th>
+          <th onclick="sortTable('shares')" style="cursor:pointer;user-select:none">Shares <span id="sort-shares"></span></th>
+          <th onclick="sortTable('ud')" style="cursor:pointer;user-select:none">UD% <span id="sort-ud"></span></th>
+          <th onclick="sortTable('fd')" style="cursor:pointer;user-select:none">FD% <span id="sort-fd"></span></th>
+          <th>Price/share</th><th>Value</th><th></th>
+        </tr></thead>
+        <tbody id="ct-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RETURNS SIMULATOR (merged sim + exit) -->
+  <div id="tab-returns" class="page">
+
+    <!-- TOP: inputs left, returns right -->
+    <div class="returns-top">
+
+      <!-- LEFT: controls -->
+      <div>
+        <div class="sim-card">
+          <h3>Valuation / exit proceeds</h3>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6">
+            One number drives everything — investor returns, dilution, and the exit waterfall below all update live.
+          </div>
+          <div class="sim-row">
+            <label>Post-money / proceeds ($)</label>
+            <input type="number" id="sim-val" value="19540000" oninput="runAll()" class="sim-input"/>
+          </div>
+          <div class="sim-row">
+            <label>New round size ($)</label>
+            <input type="number" id="sim-raise" value="0" oninput="runAll()" class="sim-input"/>
+          </div>
+          <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Pre-money</div><div class="mono" id="d-premoney" style="font-size:15px;font-weight:500">—</div></div>
+            <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Price / share</div><div class="mono" id="d-pps" style="font-size:15px;font-weight:500">—</div></div>
+            <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">New shares</div><div class="mono" id="d-newshares" style="font-size:15px;font-weight:500">—</div></div>
+            <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Round dilution</div><div class="mono" id="d-dilution" style="font-size:15px;font-weight:500;color:var(--red)">—</div></div>
+          </div>
+        </div>
+
+        <div class="sim-card">
+          <h3>Add hypothetical investors</h3>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Investment divided by derived price/share.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="field" style="margin:0"><label>Name</label><input id="ni-name" placeholder="New Investor"/></div>
+            <div class="field" style="margin:0"><label>Investment ($)</label><input id="ni-inv" type="number" placeholder="500000"/></div>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="addNewInvestor()" style="width:100%">+ Add to simulation</button>
+          <div class="new-investor-list" id="ni-list" style="display:none"></div>
+        </div>
+
+        <div class="sim-card">
+          <h3>Dilution impact</h3>
+          <table class="dilution-table">
+            <thead><tr><th>Shareholder</th><th>Current %</th><th>Post %</th><th>Δ</th><th>Value at scenario</th></tr></thead>
+            <tbody id="dilution-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: investor returns -->
+      <div>
+        <div class="sim-card">
+          <h3>Investor returns at this valuation</h3>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:14px">All ROI figures use the same proceeds input on the left. Bear / bull are independent scenarios.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem">
+            <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Bear case ($)</div>
+              <input type="number" id="roi-bear" value="10000000" oninput="runAll()" class="scenario-input-bare"/>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Bull case ($)</div>
+              <input type="number" id="roi-bull" value="100000000" oninput="runAll()" class="scenario-input-bare"/>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="roi-table">
+              <thead><tr>
+                <th>Investor</th><th>Round(s)</th><th>Invested</th><th>Shares</th><th>Value now</th><th>ROI</th><th>Bear</th><th>Bull</th>
+              </tr></thead>
+              <tbody id="roi-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- BOTTOM: exit waterfall full width -->
+    <div class="exit-section">
+      <div class="exit-section-header">
+        Exit Waterfall <span>— same proceeds as above · updates live</span>
+      </div>
+
+      <!-- breakeven banner full width -->
+      <div id="liq-breakeven-banner"></div>
+
+      <div class="exit-two-col">
+        <!-- left: tier cards -->
+        <div>
+          <div id="liq-tiers"></div>
+          <div id="liq-remainder-box"></div>
+        </div>
+        <!-- right: charts + table -->
+        <div>
+          <div class="sim-card">
+            <!-- total stacked bar -->
+            <div style="margin-bottom:1.5rem">
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Total proceeds allocation</div>
+              <div class="breakdown-bar-track" id="total-bar"></div>
+              <div class="breakdown-legend" id="total-legend"></div>
+            </div>
+            <!-- stacked bar chart -->
+            <div style="position:relative;height:200px;margin-bottom:1.5rem"><canvas id="chart-waterfall"></canvas></div>
+            <!-- table -->
+            <table class="roi-table">
+              <thead><tr>
+                <th>Investor / Group</th><th>Mode</th><th>Preference</th><th>Participation</th><th>Total</th><th>% of proceeds</th><th>ROI</th>
+              </tr></thead>
+              <tbody id="liq-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div id="tab-charts" class="page">
+    <div class="charts-grid">
+      <div class="chart-card-wide">
+        <h3>Shareholder ownership — fully diluted %</h3>
+        <div class="chart-wrap-tall"><canvas id="chart-ownership"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Shares issued by round</h3>
+        <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Share price progression by round</h3>
+        <div class="chart-wrap"><canvas id="chart-pps"></canvas></div>
+      </div>
+      <div class="chart-card-wide">
+        <h3>Total investment by investor</h3>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-inv"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESOP -->
+  <div id="tab-esop" class="page">
+    <div class="metrics" id="esop-metrics"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div class="sim-card">
+        <h3>Granted allocations</h3>
+        <table class="roi-table">
+          <thead><tr><th>Name</th><th style="text-align:right">Shares</th><th style="text-align:right">% of Pool</th><th>Status</th></tr></thead>
+          <tbody id="esop-granted-tbody"></tbody>
+        </table>
+      </div>
+      <div class="sim-card">
+        <h3>Pool summary</h3>
+        <table class="roi-table">
+          <thead><tr><th>Category</th><th style="text-align:right">Shares</th><th style="text-align:right">% of Pool</th></tr></thead>
+          <tbody id="esop-pool-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modal-title">Add shareholder</h2>
+    <div class="field-row">
+      <div class="field"><label>Name</label><input id="f-name" placeholder="Investor / entity name"/></div>
+      <div class="field"><label>Round</label>
+        <select id="f-round"><option>Founding/Angel</option><option>Seed</option><option>ESOP</option><option>CN</option><option>Pre-A</option><option>Other</option></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Share class</label>
+        <select id="f-class" onchange="document.getElementById('cn-status-field').style.display=this.value==='CN'?'block':'none'">
+          <option value="Ordinary">Ordinary</option>
+          <option value="RCPS">RCPS - Seed</option>
+          <option value="ESOP">ESOP / Option</option>
+          <option value="CN">Convertible Note</option>
+          <option value="PreA">Preferred Pre-A</option>
+        </select>
+      </div>
+      <div class="field"><label>Number of shares</label><input id="f-shares" type="number" min="0" placeholder="100000"/></div>
+    </div>
+    <div class="field" id="cn-status-field" style="display:none">
+      <label>Conversion status</label>
+      <select id="f-converted"><option value="pending">Pending</option><option value="converted">Converted</option></select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Price per share ($)</label><input id="f-price" type="number" step="0.0001" placeholder="82.74"/></div>
+      <div class="field"><label>Investment amount ($)</label><input id="f-investment" type="number" placeholder="500000"/></div>
+    </div>
+    <div class="field"><label>Notes</label><input id="f-notes" placeholder="Optional notes"/></div>
+    <div id="del-zone" style="margin-top:0.75rem"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let nextId=200,sortCol=null,sortDir=1,editId=null,currentRound='All',newInvestors=[],charts={};
+const PREA_PRICE=82.7367;
+
+let data=[
+  {id:nextId++,name:'LA Groundup Pte Ltd',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:100000,price:17406.47/100000,investment:17406.47},
+  {id:nextId++,name:'Lewis Jennifer Theresa',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:7329,price:1275.72/7329,investment:1275.72},
+  {id:nextId++,name:'Choy Siew Kai',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:1602,price:278.85/1602,investment:278.85},
+  {id:nextId++,name:'Jenny Sutanto',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:1068,price:185.90/1068,investment:185.90},
+  {id:nextId++,name:'ESOP Exercised - Lewis Jennifer Theresa',date:'3 Feb 2023',round:'ESOP',shareClass:'ESOP',shares:1507,price:70016.22/1507,investment:70016.22},
+  {id:nextId++,name:'ESOP Allocated',round:'ESOP',shareClass:'ESOP',shares:6855,price:0,investment:0},
+  {id:nextId++,name:'ESOP Unallocated Pool',round:'ESOP',shareClass:'ESOP',shares:17954,price:0,investment:0},
+  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:22077,price:45.30,investment:1000000},
+  {id:nextId++,name:'Seeds Capital Pte Ltd',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:17662,price:45.29,investment:800000},
+  {id:nextId++,name:'Lewis Jennifer Theresa',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:2760,price:36.23,investment:100000},
+  {id:nextId++,name:'Choy Siew Kai',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:36.23,investment:30000},
+  {id:nextId++,name:'Ho Shiun Arthas',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:36.23,investment:30000},
+  {id:nextId++,name:'Wong Wen Shun',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:552,price:36.23,investment:20000},
+  {id:nextId++,name:'Deepali Jain',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:276,price:36.23,investment:10000},
+  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'CN',date:'Dec 2023',shareClass:'CN',shares:6593,price:60.6736,investment:400000,converted:true},
+  {id:nextId++,name:'Tin Men Fund II',date:'Apr 2025',round:'Pre-A',shareClass:'PreA',shares:30216,price:PREA_PRICE,investment:2499972.13},
+  {id:nextId++,name:'Seeds Capital Pte Ltd',round:'Pre-A',date:'Apr 2025',shareClass:'PreA',shares:12086,price:PREA_PRICE,investment:999955.76},
+  {id:nextId++,name:'Hiven (CJ & KK JV)',date:'Apr 2025',round:'Pre-A',shareClass:'PreA',shares:3022,price:PREA_PRICE,investment:250030.31},
+  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'Pre-A',date:'Apr 2025',shareClass:'PreA',shares:6043,price:PREA_PRICE,investment:499977.88},
+];
+
+const ROUNDS=['Founding/Angel','Seed','ESOP','CN','Pre-A','Other'];
+const COLORS=['#2563eb','#7c3aed','#0d9488','#d97706','#dc2626','#db2777','#16a34a','#ea580c','#6366f1','#0891b2','#84cc16','#f59e0b'];
+
+const fmt=n=>(!n||isNaN(n))?'—':'$'+parseFloat(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtFull=n=>n?parseInt(n).toLocaleString():'0';
+const totalShares=()=>data.reduce((s,r)=>s+(r.shareClass==='CN'&&!r.converted?0:r.shares),0)||1;
+const hexToRgba=(hex,a)=>{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;};
+
+function classPill(c,converted){
+  const labels={Ordinary:'Ordinary',RCPS:'RCPS-Seed',ESOP:'ESOP',CN:'Conv.Note',PreA:'Pre-A'};
+  const pill=`<span class="pill pill-${c||'Ordinary'}">${labels[c]||c}</span>`;
+  if(c==='CN'){const badge=converted?`<span class="badge-converted">CONVERTED</span>`:`<span class="badge-pending">PENDING</span>`;return pill+' '+badge;}
+  return pill;
+}
+
+function multiBadge(m){
+  if(m===Infinity||m>900)return`<span class="multiple-badge multiple-inf">∞</span>`;
+  if(m>=3)return`<span class="multiple-badge multiple-high">${m.toFixed(2)}x</span>`;
+  if(m>=1)return`<span class="multiple-badge multiple-mid">${m.toFixed(2)}x</span>`;
+  return`<span class="multiple-badge multiple-low">${m.toFixed(2)}x</span>`;
+}
+
+function sortTable(col){
+  if(sortCol===col){sortDir*=-1;}else{sortCol=col;sortDir=1;}
+  ['name','shares','ud','fd'].forEach(c=>{const el=document.getElementById('sort-'+c);if(el)el.textContent=c===col?(sortDir===1?' ↑':' ↓'):'';});
+  renderCT();
+}
+
+function renderCT(){
+  const total=totalShares();
+  const totalInv=data.reduce((s,r)=>s+(r.investment||0),0);
+  const impliedVal=PREA_PRICE*total;
+  const uniqueEntities=[...new Set(data.filter(r=>!r.name.startsWith('ESOP')).map(r=>r.name))].length;
+  document.getElementById('ct-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Total shares (FD)</div><div class="metric-value mono">${fmtFull(total)}</div></div>
+    <div class="metric"><div class="metric-label">Shareholders</div><div class="metric-value mono">${uniqueEntities}</div></div>
+    <div class="metric"><div class="metric-label">Total raised</div><div class="metric-value mono">${fmt(totalInv)}</div></div>
+    <div class="metric"><div class="metric-label">Pre-A price/share</div><div class="metric-value mono">$${PREA_PRICE.toFixed(2)}</div><div class="metric-sub">Latest round price</div></div>
+    <div class="metric"><div class="metric-label">Implied valuation</div><div class="metric-value mono">${fmt(impliedVal)}</div><div class="metric-sub">at Pre-A price</div></div>
+  `;
+  const filters=['All',...ROUNDS.filter(r=>data.some(d=>d.round===r))];
+  document.getElementById('round-filters').innerHTML=filters.map(r=>`<div class="rf${r===currentRound?' active':''}" onclick="setRound('${r}')">${r}</div>`).join('');
+  const EP=['ESOP Allocated','ESOP Unallocated Pool'];
+  const udTotal=data.filter(r=>!EP.includes(r.name)&&!(r.shareClass==='CN'&&!r.converted)).reduce((s,r)=>s+r.shares,0)||1;
+  let vis=currentRound==='All'?[...data]:data.filter(r=>r.round===currentRound);
+  if(sortCol){vis.sort((a,b)=>{
+    const aFD=(a.shareClass==='CN'&&!a.converted)?0:a.shares/total*100;
+    const bFD=(b.shareClass==='CN'&&!b.converted)?0:b.shares/total*100;
+    const aUD=(!EP.includes(a.name)&&!(a.shareClass==='CN'&&!a.converted))?a.shares/udTotal*100:0;
+    const bUD=(!EP.includes(b.name)&&!(b.shareClass==='CN'&&!b.converted))?b.shares/udTotal*100:0;
+    if(sortCol==='name')return sortDir*(a.name.localeCompare(b.name));
+    if(sortCol==='shares')return sortDir*(b.shares-a.shares);
+    if(sortCol==='fd')return sortDir*(bFD-aFD);
+    if(sortCol==='ud')return sortDir*(bUD-aUD);
+    return 0;
+  });}
+  document.getElementById('ct-tbody').innerHTML=vis.map(r=>{
+    const ip=r.shareClass==='CN'&&!r.converted;
+    const eff=ip?0:r.shares;
+    const fdPct=(eff/total*100).toFixed(2);
+    const isEP=EP.includes(r.name);
+    const udPct=(!isEP&&!ip)?(r.shares/udTotal*100).toFixed(2):'—';
+    const val=r.price&&r.shares?fmt(r.price*r.shares):'—';
+    const rc=r.shareClass==='CN'?(r.converted?'cn-row-converted':'cn-row-pending'):'';
+    return`<tr class="${rc}"><td><span style="font-weight:500">${r.name}</span></td><td style="color:var(--text2);font-size:12px">${r.round}</td><td style="color:var(--text3);font-size:12px">${r.date||'—'}</td><td>${classPill(r.shareClass,r.converted)}</td><td class="mono" style="font-size:12px">${fmtFull(r.shares)}</td><td class="mono" style="font-size:12px">${udPct!=='—'?udPct+'%':'—'}</td><td class="mono" style="font-size:12px">${fdPct}%</td><td class="mono" style="font-size:12px">${r.price?'$'+r.price.toFixed(4):'—'}</td><td class="mono" style="font-size:12px">${val}</td><td><div class="action-cell"><button class="icon-btn" onclick="openEdit(${r.id})">✎</button><button class="icon-btn del" onclick="deleteEntry(${r.id})">✕</button></div></td></tr>`;
+  }).join('')||`<tr><td colspan="10" class="empty">No entries.</td></tr>`;
+}
+
+function setRound(r){currentRound=r;sortCol=null;sortDir=1;['name','shares','ud','fd'].forEach(c=>{const el=document.getElementById('sort-'+c);if(el)el.textContent='';});renderCT();}
+
+// ─── SINGLE MASTER COMPUTE ───────────────────────────────────────────────────
+// All logic runs from one place. Returns a computed object used by all renderers.
+function compute(){
+  const postMoney=+document.getElementById('sim-val').value||0;
+  const raise=+document.getElementById('sim-raise').value||0;
+  const existingTotal=totalShares();
+  const preMoney=postMoney-raise;
+  const pricePerShare=preMoney>0?preMoney/existingTotal:0;
+  const newSharesRound=raise>0&&pricePerShare>0?Math.round(raise/pricePerShare):0;
+  const newSharesInv=newInvestors.reduce((s,ni)=>s+(pricePerShare>0?Math.round(ni.investment/pricePerShare):0),0);
+  const newSharesTotal=newSharesRound+newSharesInv;
+  const postTotal=existingTotal+newSharesTotal;
+  const dilPct=newSharesTotal>0?((newSharesTotal/postTotal)*100).toFixed(1):'0.0';
+
+  // Investor groupings
+  const roiGrouped={};
+  data.filter(r=>r.investment>0&&!r.name.startsWith('ESOP')).forEach(r=>{
+    const k=r.name;
+    if(!roiGrouped[k])roiGrouped[k]={name:k,investment:0,shares:0,rounds:[]};
+    roiGrouped[k].investment+=(r.investment||0);
+    roiGrouped[k].shares+=(r.shareClass==='CN'&&!r.converted)?0:r.shares;
+    roiGrouped[k].rounds.push(r.round);
+  });
+
+  // Dilution grouped
+  const dilGrouped={};
+  data.forEach(r=>{
+    if(!dilGrouped[r.name])dilGrouped[r.name]={name:r.name,shares:0};
+    dilGrouped[r.name].shares+=(r.shareClass==='CN'&&!r.converted)?0:r.shares;
+  });
+
+  // ── Waterfall ────────────────────────────────────────────────────────────
+  const proceeds=postMoney; // same number — proceeds = post-money valuation at exit
+
+  const preARows=data.filter(r=>r.shareClass==='PreA'&&r.investment>0);
+  const preAInvested=preARows.reduce((s,r)=>s+(r.investment||0),0);
+  const preAShares=preARows.reduce((s,r)=>s+r.shares,0);
+
+  const seedRows=data.filter(r=>r.shareClass==='RCPS'&&r.investment>0);
+  const seedInvested=seedRows.reduce((s,r)=>s+(r.investment||0),0);
+  const seedShares=seedRows.reduce((s,r)=>s+r.shares,0);
+
+  const ordShares=data.filter(r=>r.shareClass==='Ordinary'||r.shareClass==='ESOP').reduce((s,r)=>s+r.shares,0);
+
+  let rem=proceeds;
+  const t1Pref=Math.min(preAInvested,rem); rem-=t1Pref;
+
+  // Seed Option A: preference
+  const seedPrefAmt=Math.min(seedInvested,rem);
+  const remA=rem-seedPrefAmt;
+  const partA=preAShares+ordShares;
+  const t1PartA=partA>0?(preAShares/partA)*remA:0;
+  const ordRecA=partA>0?(ordShares/partA)*remA:0;
+
+  // Seed Option B: convert
+  const partB=preAShares+ordShares+seedShares;
+  const t1PartB=partB>0?(preAShares/partB)*rem:0;
+  const seedPartB=partB>0?(seedShares/partB)*rem:0;
+  const ordRecB=partB>0?(ordShares/partB)*rem:0;
+
+  const seedConverts=seedPartB>seedPrefAmt;
+
+  const t1Pref_f=t1Pref;
+  const t1Part_f=seedConverts?t1PartB:t1PartA;
+  const t1Total=t1Pref_f+t1Part_f;
+
+  const t2Pref_f=seedConverts?0:seedPrefAmt;
+  const t2Part_f=seedConverts?seedPartB:0;
+  const t2Total=t2Pref_f+t2Part_f;
+
+  const ordPart_f=seedConverts?ordRecB:ordRecA;
+  const ordTotal=ordPart_f;
+
+  const crossover=(seedInvested*postTotal/seedShares)+preAInvested;
+
+  return {
+    postMoney,raise,preMoney,pricePerShare,existingTotal,postTotal,
+    newSharesTotal,dilPct,roiGrouped,dilGrouped,
+    // waterfall
+    proceeds,preAInvested,preAShares,seedInvested,seedShares,ordShares,
+    t1Pref_f,t1Part_f,t1Total,t2Pref_f,t2Part_f,t2Total,ordPart_f,ordTotal,
+    seedConverts,seedPrefAmt,seedPartB,crossover,
+  };
+}
+
+// ─── MASTER RUN ──────────────────────────────────────────────────────────────
+function runAll(){
+  const c=compute();
+  renderDerivedFields(c);
+  renderNIList(c.pricePerShare,c.postTotal);
+  renderDilutionTable(c);
+  renderROITable(c);
+  renderWaterfall(c);
+}
+
+function renderDerivedFields(c){
+  document.getElementById('d-premoney').textContent=fmt(c.preMoney);
+  document.getElementById('d-pps').textContent=c.pricePerShare>0?'$'+c.pricePerShare.toFixed(2):'—';
+  document.getElementById('d-newshares').textContent=c.newSharesTotal>0?fmtFull(c.newSharesTotal):'0';
+  document.getElementById('d-dilution').textContent=c.dilPct+'%';
+}
+
+function renderDilutionTable(c){
+  document.getElementById('dilution-tbody').innerHTML=
+    Object.values(c.dilGrouped).filter(g=>g.shares>0).sort((a,b)=>b.shares-a.shares).slice(0,15).map(g=>{
+      const cur=(g.shares/c.existingTotal*100).toFixed(2);
+      const post=(g.shares/c.postTotal*100).toFixed(2);
+      const diff=(parseFloat(post)-parseFloat(cur)).toFixed(2);
+      const dc=parseFloat(diff)<0?'var(--red)':'var(--green)';
+      return`<tr><td style="font-weight:500;font-size:12px">${g.name}</td><td class="mono">${cur}%</td><td class="mono">${post}%</td><td class="mono" style="color:${dc}">${diff}%</td><td class="mono">${fmt(c.pricePerShare*g.shares)}</td></tr>`;
+    }).join('');
+}
+
+function renderROITable(c){
+  const bearVal=+document.getElementById('roi-bear').value||0;
+  const bullVal=+document.getElementById('roi-bull').value||0;
+  const bearPPS=bearVal/c.postTotal;
+  const bullPPS=bullVal/c.postTotal;
+  document.getElementById('roi-tbody').innerHTML=
+    Object.values(c.roiGrouped).sort((a,b)=>b.investment-a.investment).map(g=>{
+      const cv=c.pricePerShare*g.shares;
+      const m=g.investment>0?cv/g.investment:Infinity;
+      const bm=g.investment>0?(bearPPS*g.shares)/g.investment:Infinity;
+      const blm=g.investment>0?(bullPPS*g.shares)/g.investment:Infinity;
+      const rounds=[...new Set(g.rounds)].join(', ');
+      return`<tr>
+        <td style="font-weight:500">${g.name}</td>
+        <td style="font-size:11px;color:var(--text2)">${rounds}</td>
+        <td class="mono" style="font-size:12px">${fmt(g.investment)}</td>
+        <td class="mono" style="font-size:12px">${fmtFull(g.shares)}</td>
+        <td class="mono" style="font-size:12px">${fmt(cv)}</td>
+        <td>${multiBadge(m)}</td>
+        <td>${multiBadge(bm)}</td>
+        <td>${multiBadge(blm)}</td>
+      </tr>`;
+    }).join('');
+}
+
+function renderWaterfall(c){
+  const {proceeds,preAInvested,seedInvested,t1Pref_f,t1Part_f,t1Total,t2Pref_f,t2Part_f,t2Total,ordPart_f,ordTotal,seedConverts,seedPrefAmt,seedPartB,crossover}=c;
+
+  // Breakeven banner
+  document.getElementById('liq-breakeven-banner').innerHTML=`
+    <div class="breakeven-banner">
+      Seed RCPS crossover: <strong>${fmt(crossover)}</strong> in proceeds.
+      &nbsp;·&nbsp; Below → 1× preference &nbsp;·&nbsp; Above → converts to ordinary.
+      &nbsp;·&nbsp; Currently: <strong style="color:${seedConverts?'var(--green)':'var(--amber)'}">${seedConverts?'Converting ↑ conversion value higher':'Taking preference ↑ preference higher'}</strong>
+    </div>
+  `;
+
+  // Tier helper: small inline bar showing pref vs participation split
+  function tierBar(prefAmt,partAmt,col1,col2){
+    const tot=prefAmt+partAmt;
+    if(tot<=0)return'';
+    const pp=prefAmt/tot*100, pa=partAmt/tot*100;
+    return`<div class="breakdown-bar-track" style="height:22px;margin-top:8px">
+      ${prefAmt>0?`<div class="breakdown-seg" style="width:${pp}%;background:${col1}" title="Preference: ${fmt(prefAmt)}">${pp>15?'Pref':''}</div>`:''}
+      ${partAmt>0?`<div class="breakdown-seg" style="width:${pa}%;background:${col2}" title="${seedConverts&&col2.includes('7c')?' Conversion':'Participation'}: ${fmt(partAmt)}">${pa>15?'Part.':''}</div>`:''}
+    </div>
+    <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+      ${prefAmt>0?`<span style="font-size:11px;color:var(--text2)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${col1};margin-right:3px;vertical-align:middle"></span>Preference: <strong>${fmt(prefAmt)}</strong></span>`:''}
+      ${partAmt>0?`<span style="font-size:11px;color:var(--text2)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${col2};margin-right:3px;vertical-align:middle"></span>${seedConverts&&col2.includes('7c')?'Conversion':'Participation'}: <strong>${fmt(partAmt)}</strong></span>`:''}
+    </div>`;
+  }
+
+  document.getElementById('liq-tiers').innerHTML=`
+    <div class="liq-tier" style="border-left:3px solid #9d174d">
+      <div class="liq-tier-header">
+        <div>
+          <span class="priority-badge priority-1">PRIORITY 1 — SENIOR</span>
+          <div class="liq-tier-name">RCPS A — Pre-A Investors</div>
+          <div class="liq-tier-sub">Tin Men · Seeds Capital · Hiven · Wavemaker (Pre-A)</div>
+        </div>
+        <div>
+          <div class="liq-tier-amount" style="color:#9d174d">${fmt(t1Total)}</div>
+          <div class="liq-tier-amount-sub">${proceeds>0?(t1Total/proceeds*100).toFixed(1)+'% of proceeds':''}</div>
+        </div>
+      </div>
+      ${tierBar(t1Pref_f,t1Part_f,hexToRgba('#9d174d',0.9),hexToRgba('#db2777',0.5))}
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6"><em>Participating — 1× preference first, then pro-rata in surplus</em></div>
+    </div>
+    <div class="liq-tier" style="border-left:3px solid #5b21b6">
+      <div class="liq-tier-header">
+        <div>
+          <span class="priority-badge priority-2">PRIORITY 2</span>
+          <div class="liq-tier-name">RCPS — Seed Investors</div>
+          <div class="liq-tier-sub">Wavemaker · Seeds Capital · Jennifer · Choy · Ho · Wong · Deepali</div>
+        </div>
+        <div>
+          <div class="liq-tier-amount" style="color:#5b21b6">${fmt(t2Total)}</div>
+          <div class="liq-tier-amount-sub">${proceeds>0?(t2Total/proceeds*100).toFixed(1)+'% of proceeds':''}</div>
+        </div>
+      </div>
+      <span class="decision-badge ${seedConverts?'decision-convert':'decision-prefer'}">
+        ${seedConverts?'⇄ Converting — conversion higher':'⬛ Taking 1× preference — preference higher'}
+      </span>
+      ${seedConverts
+        ? tierBar(0,t2Part_f,'',hexToRgba('#7c3aed',0.65))
+        : tierBar(t2Pref_f,0,hexToRgba('#5b21b6',0.9),'')}
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">
+        <em>${seedConverts?`Conversion: ${fmt(seedPartB)} vs preference: ${fmt(seedPrefAmt)} → converts`:`Preference: ${fmt(seedPrefAmt)} vs conversion: ${fmt(seedPartB)} → keeps preference`}</em>
+      </div>
+    </div>
+    <div class="liq-tier" style="border-left:3px solid #2563eb">
+      <div class="liq-tier-header">
+        <div>
+          <span class="priority-badge priority-3">PRIORITY 3 — RESIDUAL</span>
+          <div class="liq-tier-name">Ordinary / ESOP holders</div>
+          <div class="liq-tier-sub">LA Groundup · Jennifer (ordinary) · Choy · Jenny · ESOP grantees</div>
+        </div>
+        <div>
+          <div class="liq-tier-amount" style="color:#2563eb">${fmt(ordTotal)}</div>
+          <div class="liq-tier-amount-sub">${proceeds>0?(ordTotal/proceeds*100).toFixed(1)+'% of proceeds':''}</div>
+        </div>
+      </div>
+      ${tierBar(0,ordPart_f,'',hexToRgba('#2563eb',0.65))}
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6"><em>Pro-rata in surplus${seedConverts?' alongside converted Seed + Pre-A':' alongside Pre-A'}</em></div>
+    </div>
+  `;
+
+  const shortfall=proceeds<preAInvested?preAInvested-proceeds:0;
+  document.getElementById('liq-remainder-box').innerHTML=shortfall>0
+    ?`<div class="remainder-none">⚠ Proceeds insufficient to cover Pre-A preference. Shortfall: ${fmt(shortfall)}</div>`
+    :`<div class="remainder-positive">✓ All preferences covered. Ordinary holders receive ${fmt(ordTotal)}</div>`;
+
+  // Total stacked bar
+  const segs=[];
+  if(proceeds>0){
+    if(t1Pref_f>0)segs.push({label:'Pre-A 1× pref',value:t1Pref_f,color:'#9d174d',a:0.9});
+    if(t1Part_f>0)segs.push({label:'Pre-A participation',value:t1Part_f,color:'#db2777',a:0.5});
+    if(t2Pref_f>0)segs.push({label:'Seed 1× pref',value:t2Pref_f,color:'#5b21b6',a:0.9});
+    if(t2Part_f>0)segs.push({label:'Seed conversion',value:t2Part_f,color:'#7c3aed',a:0.65});
+    if(ordTotal>0)segs.push({label:'Ordinary / ESOP',value:ordTotal,color:'#2563eb',a:0.7});
+  }
+  document.getElementById('total-bar').innerHTML=segs.map(s=>{
+    const pct=s.value/proceeds*100;
+    return`<div class="breakdown-seg" style="width:${pct}%;background:${hexToRgba(s.color,s.a)}" title="${s.label}: ${fmt(s.value)} (${pct.toFixed(1)}%)">${pct>8?pct.toFixed(0)+'%':''}</div>`;
+  }).join('');
+  document.getElementById('total-legend').innerHTML=segs.map(s=>{
+    const pct=(s.value/proceeds*100).toFixed(1);
+    return`<div class="breakdown-legend-item"><div class="breakdown-legend-dot" style="background:${hexToRgba(s.color,s.a)}"></div><span>${s.label}: <strong>${fmt(s.value)}</strong> (${pct}%)</span></div>`;
+  }).join('');
+
+  // Table
+  const rows=[
+    {name:'Pre-A Investors (RCPS A)',mode:'Participating',pref:t1Pref_f,part:t1Part_f,total:t1Total,inv:preAInvested,color:'#9d174d'},
+    {name:'Seed Investors (RCPS)',mode:seedConverts?'Converting':'1× Preference',pref:t2Pref_f,part:t2Part_f,total:t2Total,inv:seedInvested,color:'#5b21b6'},
+    {name:'Ordinary / ESOP',mode:'Residual',pref:0,part:ordTotal,total:ordTotal,inv:0,color:'#2563eb'},
+  ];
+  document.getElementById('liq-tbody').innerHTML=rows.map(r=>{
+    const roi=r.inv>0?multiBadge(r.total/r.inv):'—';
+    const pct=proceeds>0?(r.total/proceeds*100).toFixed(1)+'%':'0%';
+    const ms=r.mode==='Converting'?'color:var(--green);font-weight:600':r.mode==='1× Preference'?'color:var(--amber);font-weight:600':'color:var(--text3)';
+    return`<tr>
+      <td style="font-weight:500;color:${r.color}">${r.name}</td>
+      <td style="font-size:11px;${ms}">${r.mode}</td>
+      <td class="mono" style="font-size:12px">${r.pref>0?fmt(r.pref):'—'}</td>
+      <td class="mono" style="font-size:12px">${r.part>0?fmt(r.part):'—'}</td>
+      <td class="mono" style="font-size:12px;font-weight:600">${fmt(r.total)}</td>
+      <td class="mono" style="font-size:12px">${pct}</td>
+      <td>${roi}</td>
+    </tr>`;
+  }).join('');
+
+  // Stacked bar chart
+  if(charts.waterfall)try{charts.waterfall.destroy();}catch(e){}
+  charts.waterfall=new Chart(document.getElementById('chart-waterfall'),{
+    type:'bar',
+    data:{
+      labels:['Pre-A (RCPS A)','Seed (RCPS)','Ordinary / ESOP'],
+      datasets:[
+        {label:'1× Preference',data:[t1Pref_f,t2Pref_f,0],backgroundColor:[hexToRgba('#9d174d',0.85),hexToRgba('#5b21b6',0.85),'rgba(0,0,0,0)'],borderRadius:4,borderSkipped:false},
+        {label:'Participation / Conversion',data:[t1Part_f,t2Part_f,ordTotal],backgroundColor:[hexToRgba('#db2777',0.45),hexToRgba('#7c3aed',0.55),hexToRgba('#2563eb',0.65)],borderRadius:4,borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`}}},
+      scales:{x:{stacked:true,ticks:{font:{size:11}},grid:{display:false}},y:{stacked:true,ticks:{font:{size:11},callback:v=>fmt(v)},grid:{color:'#e2e0d8'}}}
+    }
+  });
+}
+
+function addNewInvestor(){
+  const name=document.getElementById('ni-name').value.trim();
+  const inv=parseFloat(document.getElementById('ni-inv').value)||0;
+  if(!name||!inv)return;
+  newInvestors.push({id:Date.now(),name,investment:inv});
+  document.getElementById('ni-name').value='';document.getElementById('ni-inv').value='';
+  runAll();
+}
+function renderNIList(pps,postTotal){
+  const list=document.getElementById('ni-list');
+  if(!newInvestors.length){list.style.display='none';return;}
+  list.style.display='block';
+  list.innerHTML=newInvestors.map(ni=>{
+    const shares=pps>0?Math.round(ni.investment/pps):0;
+    const pct=postTotal>0?(shares/postTotal*100).toFixed(2):'0.00';
+    return`<div class="ni-item"><span class="ni-name">${ni.name}</span><span class="ni-shares">${fmtFull(shares)} shares · ${fmt(ni.investment)}</span><span class="ni-pct">${pct}%</span><button class="ni-del" onclick="removeNI(${ni.id})">✕</button></div>`;
+  }).join('');
+}
+function removeNI(id){newInvestors=newInvestors.filter(n=>n.id!==id);runAll();}
+
+// CHARTS TAB
+function renderCharts(){
+  Object.values(charts).filter(c=>c!==charts.waterfall).forEach(c=>{try{c.destroy();}catch(e){}});
+  const total=totalShares();
+  const EP=['ESOP Allocated','ESOP Unallocated Pool'];
+  const og={};
+  data.forEach(r=>{if(EP.includes(r.name))return;const eff=(r.shareClass==='CN'&&!r.converted)?0:r.shares;if(!og[r.name])og[r.name]=0;og[r.name]+=eff;});
+  const oe=Object.entries(og).filter(([,s])=>s>0).sort((a,b)=>b[1]-a[1]);
+  charts.ownership=new Chart(document.getElementById('chart-ownership'),{
+    type:'bar',
+    data:{labels:oe.map(([n])=>n.length>24?n.slice(0,22)+'…':n),datasets:[{label:'FD%',data:oe.map(([,s])=>parseFloat((s/total*100).toFixed(2))),backgroundColor:oe.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:7,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y.toFixed(2)}% FD`}}},scales:{y:{ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:11},maxRotation:35},grid:{display:false}}}}
+  });
+  const br={};data.forEach(r=>{br[r.round]=(br[r.round]||0)+r.shares;});const rk=Object.keys(br);
+  charts.bar=new Chart(document.getElementById('chart-bar'),{
+    type:'bar',data:{labels:rk,datasets:[{label:'Shares',data:rk.map(k=>br[k]),backgroundColor:COLORS,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11},callback:v=>v.toLocaleString()},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+  const ppd=[{round:'Founding\n(Oct 2021)',pps:parseFloat((17406.47/100000).toFixed(4))},{round:'Seed\n(Feb 2023)',pps:45.30},{round:'CN\n(Dec 2023)',pps:60.6736},{round:'Pre-A\n(Apr 2025)',pps:PREA_PRICE}];
+  charts.pps=new Chart(document.getElementById('chart-pps'),{
+    type:'line',data:{labels:ppd.map(p=>p.round),datasets:[{label:'Price/share',data:ppd.map(p=>p.pps),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',tension:0.35,fill:true,pointRadius:8,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2.5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` $${ctx.parsed.y.toFixed(4)}/share`}}},scales:{y:{ticks:{font:{size:11},callback:v=>'$'+v.toFixed(2)},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+  const bi={};data.filter(r=>r.investment>0).forEach(r=>{bi[r.name]=(bi[r.name]||0)+r.investment;});
+  const ie=Object.entries(bi).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  charts.inv=new Chart(document.getElementById('chart-inv'),{
+    type:'bar',data:{labels:ie.map(([n])=>n.length>24?n.slice(0,22)+'…':n),datasets:[{label:'Invested',data:ie.map(([,v])=>v),backgroundColor:'#2563eb',borderRadius:6,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.parsed.x)}}},scales:{x:{ticks:{font:{size:11},callback:v=>fmt(v)},grid:{color:'#e2e0d8'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+}
+
+// ESOP
+const ESOP_GRANTS=[{name:'Lewis Jennifer Theresa',shares:1507,status:'Exercised'},{name:'Leon',shares:2854,status:'Granted'},{name:'Alex',shares:1098,status:'Granted'},{name:'YT',shares:2297,status:'Granted'},{name:'Agus',shares:303,status:'Granted'},{name:'Riyan',shares:303,status:'Granted'}];
+function renderESOP(){
+  const exercised=1507,granted=6855,unallocated=17954,totalPool=26316;
+  document.getElementById('esop-metrics').innerHTML='<div class="metric"><div class="metric-label">Total Pool</div><div class="metric-value mono">'+fmtFull(totalPool)+'</div></div>'+'<div class="metric"><div class="metric-label">Granted</div><div class="metric-value mono">'+fmtFull(ESOP_GRANTS.reduce((s,g)=>s+g.shares,0))+'</div></div>'+'<div class="metric"><div class="metric-label">Exercised</div><div class="metric-value mono">'+fmtFull(exercised)+'</div></div>'+'<div class="metric"><div class="metric-label">Unallocated</div><div class="metric-value mono" style="color:var(--green)">'+fmtFull(unallocated)+'</div></div>';
+  document.getElementById('esop-granted-tbody').innerHTML=ESOP_GRANTS.map(g=>{const pct=(g.shares/totalPool*100).toFixed(2);const sc=g.status==='Exercised'?'var(--green)':'var(--blue)';const sb=g.status==='Exercised'?'var(--green-light)':'var(--blue-light)';return`<tr><td style="font-weight:500">${g.name}</td><td class="mono" style="text-align:right;font-size:12px">${fmtFull(g.shares)}</td><td class="mono" style="text-align:right;font-size:12px">${pct}%</td><td><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${sb};color:${sc}">${g.status}</span></td></tr>`;}).join('');
+  let h=[{l:'Exercised (Jennifer)',s:exercised},{l:'Granted (Active)',s:granted},{l:'Unallocated',s:unallocated}].map(r=>`<tr><td>${r.l}</td><td class="mono" style="text-align:right;font-size:12px">${fmtFull(r.s)}</td><td class="mono" style="text-align:right;font-size:12px">${(r.s/totalPool*100).toFixed(2)}%</td></tr>`).join('');
+  h+=`<tr style="border-top:1px solid var(--border2)"><td style="font-weight:600">Total</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">${fmtFull(totalPool)}</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">100%</td></tr>`;
+  document.getElementById('esop-pool-tbody').innerHTML=h;
+}
+
+function openAdd(){editId=null;document.getElementById('modal-title').textContent='Add shareholder';['f-name','f-shares','f-price','f-investment','f-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-round').value='Founding/Angel';document.getElementById('f-class').value='Ordinary';document.getElementById('f-converted').value='pending';document.getElementById('cn-status-field').style.display='none';document.getElementById('del-zone').innerHTML='';document.getElementById('modal').style.display='flex';}
+function openEdit(id){editId=id;const r=data.find(x=>x.id===id);document.getElementById('modal-title').textContent='Edit entry';document.getElementById('f-name').value=r.name;document.getElementById('f-round').value=r.round;document.getElementById('f-class').value=r.shareClass;document.getElementById('f-shares').value=r.shares;document.getElementById('f-price').value=r.price||'';document.getElementById('f-investment').value=r.investment||'';document.getElementById('f-notes').value=r.notes||'';document.getElementById('f-converted').value=r.converted?'converted':'pending';document.getElementById('cn-status-field').style.display=r.shareClass==='CN'?'block':'none';document.getElementById('del-zone').innerHTML=`<button class="btn btn-danger" style="width:100%;margin-bottom:0" onclick="deleteEntry(${id});closeModal()">Remove this entry</button>`;document.getElementById('modal').style.display='flex';}
+function closeModal(){document.getElementById('modal').style.display='none';editId=null;}
+function saveEntry(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){alert('Name required');return;}
+  const sc=document.getElementById('f-class').value;
+  const entry={id:editId||nextId++,name,round:document.getElementById('f-round').value,shareClass:sc,shares:parseInt(document.getElementById('f-shares').value)||0,price:parseFloat(document.getElementById('f-price').value)||0,investment:parseFloat(document.getElementById('f-investment').value)||0,notes:document.getElementById('f-notes').value.trim(),converted:sc==='CN'?document.getElementById('f-converted').value==='converted':undefined};
+  if(editId){const i=data.findIndex(x=>x.id===editId);data[i]=entry;}else{data.push(entry);}
+  closeModal();renderCT();
+}
+function deleteEntry(id){if(!confirm('Remove?'))return;data=data.filter(x=>x.id!==id);closeModal();renderCT();}
+
+function showTab(name,event){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(event)event.target.classList.add('active');
+  if(name==='returns')runAll();
+  if(name==='charts')setTimeout(renderCharts,50);
+  if(name==='esop')renderESOP();
+}
+
+function exportCSV(){
+  const hdr='Name,Round,Share Class,Shares,Price Per Share,Investment,Notes';
+  const rows=data.map(r=>[r.name,r.round,r.shareClass,r.shares,r.price,r.investment,r.notes||''].map(v=>`"${v}"`).join(','));
+  const blob=new Blob([[hdr,...rows].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='captable-groundupai.csv';a.click();
+}
+
+renderCT();
+</script>
+</body>
+</html>
