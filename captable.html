@@ -40,11 +40,13 @@ header p { color: var(--text2); font-size: 13px; margin-top: 4px; }
 .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--text); border-bottom-color: var(--text); }
-.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
-.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
-.metric-label { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
-.metric-value { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
-.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; min-width: 0; overflow: hidden; }
+.metric-label { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric-value { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.metric-value.fit-md { font-size: 18px; }
+.metric-value.fit-sm { font-size: 15px; }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; line-height: 1.35; word-wrap: break-word; }
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; }
 .btn:hover { background: var(--surface2); }
 .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
@@ -422,6 +424,7 @@ function checkPW(){
               <th onclick="sortESOP('name')" style="cursor:pointer;user-select:none">Name <span id="esop-sort-name" style="color:var(--text3);font-size:10px"></span></th>
               <th onclick="sortESOP('shares')" style="cursor:pointer;user-select:none;text-align:right">Shares <span id="esop-sort-shares" style="color:var(--text3);font-size:10px"></span></th>
               <th style="text-align:right">% of Pool</th>
+              <th style="text-align:right">% of Company<br><span style="font-weight:400;color:var(--text3);font-size:10px">(fully diluted)</span></th>
               <th onclick="sortESOP('dateTs')" style="cursor:pointer;user-select:none">Date of Grant <span id="esop-sort-dateTs" style="color:var(--text3);font-size:10px">↑</span></th>
               <th onclick="sortESOP('status')" style="cursor:pointer;user-select:none">Status <span id="esop-sort-status" style="color:var(--text3);font-size:10px"></span></th>
             </tr></thead>
@@ -432,7 +435,7 @@ function checkPW(){
       <div class="sim-card">
         <h3>Pool summary</h3>
         <table class="roi-table">
-          <thead><tr><th>Category</th><th style="text-align:right">Shares</th><th style="text-align:right">% of Pool</th></tr></thead>
+          <thead><tr><th>Category</th><th style="text-align:right">Shares</th><th style="text-align:right">% of Pool</th><th style="text-align:right">% of Company<br><span style="font-weight:400;color:var(--text3);font-size:10px">(FD)</span></th></tr></thead>
           <tbody id="esop-pool-tbody"></tbody>
         </table>
       </div>
@@ -489,16 +492,16 @@ let data=[
   {id:nextId++,name:'Choy Siew Kai',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:1602,price:278.85/1602,investment:278.85},
   {id:nextId++,name:'Jenny Sutanto',round:'Founding/Angel',date:'Oct 2021',shareClass:'Ordinary',shares:1068,price:185.90/1068,investment:185.90},
   {id:nextId++,name:'ESOP Exercised - Lewis Jennifer Theresa',date:'3 Feb 2023',round:'ESOP',shareClass:'ESOP',shares:1507,price:70016.22/1507,investment:70016.22},
-  {id:nextId++,name:'ESOP Allocated',round:'ESOP',shareClass:'ESOP',shares:6855,price:0,investment:0},
-  {id:nextId++,name:'ESOP Unallocated Pool',round:'ESOP',shareClass:'ESOP',shares:17954,price:0,investment:0},
-  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:22077,price:45.30,investment:1000000},
-  {id:nextId++,name:'Seeds Capital Pte Ltd',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:17662,price:45.29,investment:800000},
-  {id:nextId++,name:'Lewis Jennifer Theresa',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:2760,price:36.23,investment:100000},
-  {id:nextId++,name:'Choy Siew Kai',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:36.23,investment:30000},
-  {id:nextId++,name:'Ho Shiun Arthas',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:36.23,investment:30000},
-  {id:nextId++,name:'Wong Wen Shun',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:552,price:36.23,investment:20000},
-  {id:nextId++,name:'Deepali Jain',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:276,price:36.23,investment:10000},
-  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'CN',date:'Dec 2023',shareClass:'CN',shares:6593,price:60.6736,investment:400000,converted:true},
+  {id:nextId++,name:'ESOP Allocated',round:'ESOP',shareClass:'ESOP',shares:12055,price:0,investment:0},
+  {id:nextId++,name:'ESOP Unallocated Pool',round:'ESOP',shareClass:'ESOP',shares:12754,price:0,investment:0},
+  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:22077,price:1000000/22077,investment:1000000},
+  {id:nextId++,name:'Seeds Capital Pte Ltd',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:17662,price:800000/17662,investment:800000},
+  {id:nextId++,name:'Lewis Jennifer Theresa',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:2760,price:100000/2760,investment:100000},
+  {id:nextId++,name:'Choy Siew Kai',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:30000/828,investment:30000},
+  {id:nextId++,name:'Ho Shiun Arthas',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:828,price:30000/828,investment:30000},
+  {id:nextId++,name:'Wong Wen Shun',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:552,price:20000/552,investment:20000},
+  {id:nextId++,name:'Deepali Jain',round:'Seed',date:'Feb 2023',shareClass:'RCPS',shares:276,price:10000/276,investment:10000},
+  {id:nextId++,name:'Wavemaker Pacific 4, L.P.',round:'CN',date:'Dec 2023',shareClass:'CN',shares:6593,price:400000/6593,investment:400000,converted:true},
   {id:nextId++,name:'Tin Men Fund II',date:'Apr 2025',round:'Pre-A',shareClass:'PreA',shares:30216,price:PREA_PRICE,investment:2499972.13},
   {id:nextId++,name:'Seeds Capital Pte Ltd',round:'Pre-A',date:'Apr 2025',shareClass:'PreA',shares:12086,price:PREA_PRICE,investment:999955.76},
   {id:nextId++,name:'Hiven (CJ & KK JV)',date:'Apr 2025',round:'Pre-A',shareClass:'PreA',shares:3022,price:PREA_PRICE,investment:250030.31},
@@ -533,18 +536,60 @@ function sortTable(col){
   renderCT();
 }
 
+// Auto-fit metric values: shrink font when text exceeds container width
+function fitMetrics(containerId){
+  const c=document.getElementById(containerId);
+  if(!c)return;
+  // Wait for layout, then check each value
+  requestAnimationFrame(()=>{
+    c.querySelectorAll('.metric-value').forEach(el=>{
+      el.classList.remove('fit-md','fit-sm');
+      // If text overflows, step down
+      if(el.scrollWidth>el.clientWidth){
+        el.classList.add('fit-md');
+        if(el.scrollWidth>el.clientWidth){
+          el.classList.add('fit-sm');
+          el.classList.remove('fit-md');
+        }
+      }
+    });
+  });
+}
+
 function renderCT(){
   const total=totalShares();
   const totalInv=data.reduce((s,r)=>s+(r.investment||0),0);
   const impliedVal=PREA_PRICE*total;
   const uniqueEntities=[...new Set(data.filter(r=>!r.name.startsWith('ESOP')).map(r=>r.name))].length;
-  document.getElementById('ct-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Total shares (FD)</div><div class="metric-value mono">${fmtFull(total)}</div></div>
-    <div class="metric"><div class="metric-label">Shareholders</div><div class="metric-value mono">${uniqueEntities}</div></div>
-    <div class="metric"><div class="metric-label">Total raised</div><div class="metric-value mono">${fmt(totalInv)}</div></div>
-    <div class="metric"><div class="metric-label">Pre-A price/share</div><div class="metric-value mono">$${PREA_PRICE.toFixed(2)}</div><div class="metric-sub">Latest round price</div></div>
-    <div class="metric"><div class="metric-label">Implied valuation</div><div class="metric-value mono">${fmt(impliedVal)}</div><div class="metric-sub">at Pre-A price</div></div>
-  `;
+
+  // Round-specific metrics (when a single round is filtered)
+  if(currentRound!=='All'){
+    const roundRows=data.filter(r=>r.round===currentRound);
+    const roundRaised=roundRows.reduce((s,r)=>s+(r.investment||0),0);
+    const roundShares=roundRows.reduce((s,r)=>s+(r.shareClass==='CN'&&!r.converted?0:r.shares),0);
+    const roundInvestors=[...new Set(roundRows.filter(r=>!r.name.startsWith('ESOP')).map(r=>r.name))].length;
+    // Weighted avg $/share for this round (excludes $0 ESOP rows)
+    const pricedRows=roundRows.filter(r=>r.investment>0&&r.shares>0);
+    const wAvgPrice=pricedRows.length?pricedRows.reduce((s,r)=>s+r.investment,0)/pricedRows.reduce((s,r)=>s+r.shares,0):0;
+    const roundImpliedVal=wAvgPrice>0?wAvgPrice*total:0;
+    const isESOP=currentRound==='ESOP';
+    document.getElementById('ct-metrics').innerHTML=`
+      <div class="metric"><div class="metric-label">${currentRound} — Money raised</div><div class="metric-value mono" style="color:var(--blue)">${isESOP?'—':fmt(roundRaised)}</div><div class="metric-sub">${isESOP?'Equity pool — no cash':'in this round'}</div></div>
+      <div class="metric"><div class="metric-label">${isESOP?'Grantees':'Investors this round'}</div><div class="metric-value mono">${roundInvestors}</div></div>
+      <div class="metric"><div class="metric-label">Shares issued</div><div class="metric-value mono">${fmtFull(roundShares)}</div><div class="metric-sub">${(roundShares/total*100).toFixed(1)}% of FD</div></div>
+      <div class="metric"><div class="metric-label">$/share (round avg)</div><div class="metric-value mono">${isESOP?'—':(wAvgPrice>0?'$'+wAvgPrice.toFixed(2):'—')}</div></div>
+      <div class="metric"><div class="metric-label">Implied val at round</div><div class="metric-value mono">${isESOP?'—':(roundImpliedVal>0?fmt(roundImpliedVal):'—')}</div><div class="metric-sub">${isESOP?'':'at round price × FD'}</div></div>
+    `;
+  } else {
+    document.getElementById('ct-metrics').innerHTML=`
+      <div class="metric"><div class="metric-label">Total shares (FD)</div><div class="metric-value mono">${fmtFull(total)}</div></div>
+      <div class="metric"><div class="metric-label">Shareholders</div><div class="metric-value mono">${uniqueEntities}</div></div>
+      <div class="metric"><div class="metric-label">Total raised</div><div class="metric-value mono">${fmt(totalInv)}</div></div>
+      <div class="metric"><div class="metric-label">Pre-A price/share</div><div class="metric-value mono">$${PREA_PRICE.toFixed(2)}</div><div class="metric-sub">Latest round price</div></div>
+      <div class="metric"><div class="metric-label">Implied valuation</div><div class="metric-value mono">${fmt(impliedVal)}</div><div class="metric-sub">at Pre-A price</div></div>
+    `;
+  }
+  fitMetrics('ct-metrics');
   const filters=['All',...ROUNDS.filter(r=>data.some(d=>d.round===r))];
   document.getElementById('round-filters').innerHTML=filters.map(r=>`<div class="rf${r===currentRound?' active':''}" onclick="setRound('${r}')">${r}</div>`).join('');
   const EP=['ESOP Allocated','ESOP Unallocated Pool'];
@@ -567,9 +612,9 @@ function renderCT(){
     const fdPct=(eff/total*100).toFixed(2);
     const isEP=EP.includes(r.name);
     const udPct=(!isEP&&!ip)?(r.shares/udTotal*100).toFixed(2):'—';
-    const val=r.price&&r.shares?fmt(r.price*r.shares):'—';
+    const val=r.investment?fmt(r.investment):(r.price&&r.shares?fmt(r.price*r.shares):'—');
     const rc=r.shareClass==='CN'?(r.converted?'cn-row-converted':'cn-row-pending'):'';
-    return`<tr class="${rc}"><td><span style="font-weight:500">${r.name}</span></td><td style="color:var(--text2);font-size:12px">${r.round}</td><td style="color:var(--text3);font-size:12px">${r.date||'—'}</td><td>${classPill(r.shareClass,r.converted)}</td><td class="mono" style="font-size:12px">${fmtFull(r.shares)}</td><td class="mono" style="font-size:12px">${udPct!=='—'?udPct+'%':'—'}</td><td class="mono" style="font-size:12px">${fdPct}%</td><td class="mono" style="font-size:12px">${r.price?'$'+r.price.toFixed(4):'—'}</td><td class="mono" style="font-size:12px">${val}</td><td><div class="action-cell"><button class="icon-btn" onclick="openEdit(${r.id})">✎</button><button class="icon-btn del" onclick="deleteEntry(${r.id})">✕</button></div></td></tr>`;
+    return`<tr class="${rc}"><td><span style="font-weight:500">${r.name}</span></td><td style="color:var(--text2);font-size:12px">${r.round}</td><td style="color:var(--text3);font-size:12px">${r.date||'—'}</td><td>${classPill(r.shareClass,r.converted)}</td><td class="mono" style="font-size:12px">${fmtFull(r.shares)}</td><td class="mono" style="font-size:12px">${udPct!=='—'?udPct+'%':'—'}</td><td class="mono" style="font-size:12px">${fdPct}%</td><td class="mono" style="font-size:12px">${r.price?'$'+r.price.toFixed(2):'—'}</td><td class="mono" style="font-size:12px">${val}</td><td><div class="action-cell"><button class="icon-btn" onclick="openEdit(${r.id})">✎</button><button class="icon-btn del" onclick="deleteEntry(${r.id})">✕</button></div></td></tr>`;
   }).join('')||`<tr><td colspan="10" class="empty">No entries.</td></tr>`;
 }
 
@@ -896,10 +941,10 @@ function renderCharts(){
     type:'bar',data:{labels:rk,datasets:[{label:'Shares',data:rk.map(k=>br[k]),backgroundColor:COLORS,borderRadius:6,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11},callback:v=>v.toLocaleString()},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}
   });
-  const ppd=[{round:'Founding\n(Oct 2021)',pps:parseFloat((17406.47/100000).toFixed(4))},{round:'Seed\n(Feb 2023)',pps:45.30},{round:'CN\n(Dec 2023)',pps:60.6736},{round:'Pre-A\n(Apr 2025)',pps:PREA_PRICE}];
+  const ppd=[{round:'Founding\n(Oct 2021)',pps:17406.47/100000},{round:'Seed\n(Feb 2023)',pps:1000000/22077},{round:'CN\n(Dec 2023)',pps:400000/6593},{round:'Pre-A\n(Apr 2025)',pps:PREA_PRICE}];
   charts.pps=new Chart(document.getElementById('chart-pps'),{
     type:'line',data:{labels:ppd.map(p=>p.round),datasets:[{label:'Price/share',data:ppd.map(p=>p.pps),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',tension:0.35,fill:true,pointRadius:8,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2.5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` $${ctx.parsed.y.toFixed(4)}/share`}}},scales:{y:{ticks:{font:{size:11},callback:v=>'$'+v.toFixed(2)},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` $${ctx.parsed.y.toFixed(2)}/share`}}},scales:{y:{ticks:{font:{size:11},callback:v=>'$'+v.toFixed(2)},grid:{color:'#e2e0d8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
   });
   const bi={};data.filter(r=>r.investment>0).forEach(r=>{bi[r.name]=(bi[r.name]||0)+r.investment;});
   const ie=Object.entries(bi).sort((a,b)=>b[1]-a[1]).slice(0,10);
@@ -917,6 +962,7 @@ const ESOP_GRANTS=[
   {name:'YT',shares:2297,status:'Granted',date:'1 Apr 2024',dateTs:new Date('2024-04-01')},
   {name:'Leon',shares:2854,status:'Granted',date:'1 May 2025',dateTs:new Date('2025-05-01')},
   {name:'Alex',shares:1098,status:'Granted',date:'1 May 2025',dateTs:new Date('2025-05-01')},
+  {name:'Darren',shares:3000,status:'Granted',date:'1 May 2025',dateTs:new Date('2025-05-01')},
   {name:'Vincent Phang',shares:2200,status:'Granted',date:'12 Sep 2025',dateTs:new Date('2025-09-12')},
 ];
 let esopSortCol='dateTs',esopSortDir=1;
@@ -926,18 +972,20 @@ function sortESOP(col){
 }
 
 function renderESOP(){
-  const exercised=1507,granted=9055,unallocated=15754,totalPool=28516;
+  const exercised=1507,granted=12055,unallocated=12754,totalPool=26316;
   const grantedActive=ESOP_GRANTS.filter(g=>g.status==='Granted').reduce((s,g)=>s+g.shares,0);
   const allocatedTotal=exercised+grantedActive; // exercised + granted
   const allocatedPct=(allocatedTotal/totalPool*100).toFixed(1);
   const unallocatedPct=(unallocated/totalPool*100).toFixed(1);
+  const fdTotal=totalShares();
 
   document.getElementById('esop-metrics').innerHTML=
-    '<div class="metric"><div class="metric-label">Total Pool</div><div class="metric-value mono">'+fmtFull(totalPool)+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Granted (active)</div><div class="metric-value mono">'+fmtFull(grantedActive)+'</div><div class="metric-sub">'+(grantedActive/totalPool*100).toFixed(1)+'% of pool</div></div>'+
-    '<div class="metric"><div class="metric-label">Exercised</div><div class="metric-value mono">'+fmtFull(exercised)+'</div><div class="metric-sub">'+(exercised/totalPool*100).toFixed(1)+'% of pool</div></div>'+
-    '<div class="metric"><div class="metric-label">Pool allocated</div><div class="metric-value mono" style="color:var(--amber)">'+allocatedPct+'%</div><div class="metric-sub">'+fmtFull(allocatedTotal)+' of '+fmtFull(totalPool)+' shares</div></div>'+
-    '<div class="metric"><div class="metric-label">Unallocated</div><div class="metric-value mono" style="color:var(--green)">'+fmtFull(unallocated)+'</div><div class="metric-sub">'+unallocatedPct+'% remaining</div></div>';
+    '<div class="metric"><div class="metric-label">ESOP — % of Company</div><div class="metric-value mono" style="color:var(--blue)">'+(totalPool/fdTotal*100).toFixed(2)+'%</div><div class="metric-sub">'+fmtFull(totalPool)+' of '+fmtFull(fdTotal)+' FD shares</div></div>'+
+    '<div class="metric"><div class="metric-label">In Hands of Team</div><div class="metric-value mono">'+(allocatedTotal/fdTotal*100).toFixed(2)+'%</div><div class="metric-sub">'+fmtFull(allocatedTotal)+' shares (granted + exercised)</div></div>'+
+    '<div class="metric"><div class="metric-label">Available to Grant</div><div class="metric-value mono" style="color:var(--green)">'+(unallocated/fdTotal*100).toFixed(2)+'%</div><div class="metric-sub">'+fmtFull(unallocated)+' shares left in pool</div></div>'+
+    '<div class="metric"><div class="metric-label">Pool Used</div><div class="metric-value mono" style="color:var(--amber)">'+allocatedPct+'%</div><div class="metric-sub">'+unallocatedPct+'% pool remaining</div></div>'+
+    '<div class="metric"><div class="metric-label">Grantees</div><div class="metric-value mono">'+ESOP_GRANTS.length+'</div><div class="metric-sub">'+ESOP_GRANTS.filter(g=>g.status==='Granted').length+' granted · '+ESOP_GRANTS.filter(g=>g.status==='Exercised').length+' exercised</div></div>';
+  fitMetrics('esop-metrics');
 
   // Sort
   const sorted=[...ESOP_GRANTS].sort((a,b)=>{
@@ -959,12 +1007,14 @@ function renderESOP(){
   document.getElementById('esop-granted-tbody').innerHTML=
     sorted.map(g=>{
       const pct=(g.shares/totalPool*100).toFixed(2);
+      const fdPct=(g.shares/fdTotal*100).toFixed(2);
       const sc=g.status==='Exercised'?'var(--green)':'var(--blue)';
       const sb=g.status==='Exercised'?'var(--green-light)':'var(--blue-light)';
       return`<tr>
         <td style="font-weight:500">${g.name}</td>
         <td class="mono" style="text-align:right;font-size:12px">${fmtFull(g.shares)}</td>
         <td class="mono" style="text-align:right;font-size:12px">${pct}%</td>
+        <td class="mono" style="text-align:right;font-size:12px;color:var(--blue);font-weight:500">${fdPct}%</td>
         <td style="font-size:12px;color:var(--text2)">${g.date||'—'}</td>
         <td><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${sb};color:${sc}">${g.status}</span></td>
       </tr>`;
@@ -974,13 +1024,14 @@ function renderESOP(){
       <td style="font-weight:700;font-size:12px">Total granted &amp; exercised</td>
       <td class="mono" style="text-align:right;font-size:12px;font-weight:700">${fmtFull(totalGrantedShares)}</td>
       <td class="mono" style="text-align:right;font-size:12px;font-weight:700">${totalGrantedPct}%</td>
+      <td class="mono" style="text-align:right;font-size:12px;font-weight:700;color:var(--blue)">${(totalGrantedShares/fdTotal*100).toFixed(2)}%</td>
       <td style="font-size:11px;color:var(--text3)">of pool: ${fmtFull(totalPool)}</td>
       <td><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--amber-light);color:var(--amber)">${(totalGrantedShares/totalPool*100).toFixed(1)}% allocated</span></td>
     </tr>`;
 
   let h=[{l:'Exercised (Jennifer)',s:exercised},{l:'Granted (Active)',s:grantedActive},{l:'Unallocated',s:unallocated}]
-    .map(r=>`<tr><td>${r.l}</td><td class="mono" style="text-align:right;font-size:12px">${fmtFull(r.s)}</td><td class="mono" style="text-align:right;font-size:12px">${(r.s/totalPool*100).toFixed(2)}%</td></tr>`).join('');
-  h+=`<tr style="border-top:1px solid var(--border2)"><td style="font-weight:600">Total</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">${fmtFull(totalPool)}</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">100%</td></tr>`;
+    .map(r=>`<tr><td>${r.l}</td><td class="mono" style="text-align:right;font-size:12px">${fmtFull(r.s)}</td><td class="mono" style="text-align:right;font-size:12px">${(r.s/totalPool*100).toFixed(2)}%</td><td class="mono" style="text-align:right;font-size:12px;color:var(--blue);font-weight:500">${(r.s/fdTotal*100).toFixed(2)}%</td></tr>`).join('');
+  h+=`<tr style="border-top:1px solid var(--border2)"><td style="font-weight:600">Total ESOP Pool</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">${fmtFull(totalPool)}</td><td class="mono" style="text-align:right;font-size:12px;font-weight:600">100%</td><td class="mono" style="text-align:right;font-size:12px;font-weight:700;color:var(--blue)">${(totalPool/fdTotal*100).toFixed(2)}%</td></tr>`;
   document.getElementById('esop-pool-tbody').innerHTML=h;
 }
 
